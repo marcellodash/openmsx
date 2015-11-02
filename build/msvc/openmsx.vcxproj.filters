@@ -70,6 +70,9 @@
     <Filter Include="laserdisc">
       <UniqueIdentifier>{3b3e10a3-7923-46c0-b78f-46acd840d7c2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{992fc7ee-c13a-446c-b6bf-570b692e637f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(OpenMSXSrcDir)\cassette\CasImage.cc">
@@ -918,9 +921,6 @@
     <ClCompile Include="$(OpenMSXSrcDir)\utils\MemoryOps.cc">
       <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenMSXSrcDir)\utils\sdlwin32.cc">
-      <Filter>utils</Filter>
-    </ClCompile>
     <ClCompile Include="$(OpenMSXSrcDir)\utils\sha1.cc">
       <Filter>utils</Filter>
     </ClCompile>
@@ -1342,6 +1342,15 @@
     <ClCompile Include="$(OpenMSXSrcDir)\utils\TigerTree.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\utils\snappy.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\SuperImposedVideoFrame.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\events\AdhocCliCommParser.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\memory\MegaFlashRomSCCPlusSD.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\memory\SdCard.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\utils\win32-windowhandle.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\GLDefaultScaler.cc" />
+    <ClCompile Include="$(OpenMSXSrcDir)\video\GLContext.cc" />
+    <ClCompile Include="..\..\src\plugin\CartridgePlugin.cc">
+      <Filter>plugin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(OpenMSXSrcDir)\cassette\CasImage.hh">
@@ -2810,6 +2819,15 @@
     <None Include="$(OpenMSXSrcDir)\utils\snappy.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SuperImposedVideoFrame.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
+    <None Include="$(OpenMSXSrcDir)\events\AdhocCliCommParser.hh" />
+    <None Include="$(OpenMSXSrcDir)\memory\MegaFlashRomSCCPlusSD.hh" />
+    <None Include="$(OpenMSXSrcDir)\memory\SdCard.cc.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\GLContext.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\scalers\GLDefaultScaler.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="$(OpenMSXSrcDir)\resource\openmsx.rc">
@@ -2819,6 +2837,12 @@
   <ItemGroup>
     <ClInclude Include="$(OpenMSXSrcDir)\sound\fake_windows.h">
       <Filter>sound</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\plugin\CartridgePlugin.hh">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\plugin\CartridgePluginInterface.hh">
+      <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

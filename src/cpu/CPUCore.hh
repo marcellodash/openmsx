@@ -56,6 +56,9 @@ public:
 	  */
 	void exitCPULoopAsync();
 
+	byte checkHook8(word addr, byte val, uint32_t opcode);
+	word checkHook16(word addr, word val, uint32_t opcode);
+
 	void warp(EmuTime::param time);
 	EmuTime::param getCurrentTime() const;
 	void wait(EmuTime::param time);
@@ -227,6 +230,7 @@ private:
 	template<Reg8 DST, Reg16 IXY> inline int ld_R_xix();
 
 	template<int EE> inline unsigned RD_P_XX();
+	template<int EE> inline unsigned RD_P_XX_HOOK(uint32_t opcode);
 	template<Reg16 REG, int EE> inline int ld_SS_xword();
 	template<Reg16 REG> inline int ld_SS_xword_ED();
 

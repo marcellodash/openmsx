@@ -93,6 +93,7 @@ public:
 	bool isFastForwarding() const { return fastForwarding; }
 
 	byte readIRQVector();
+	void doIorqM1();
 
 	const HardwareConfig* getMachineConfig() const { return machineConfig; }
 	void setMachineConfig(HardwareConfig* machineConfig);

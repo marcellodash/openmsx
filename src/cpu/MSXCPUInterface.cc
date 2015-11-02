@@ -54,7 +54,7 @@ static unsigned breakedSettingCount = 0;
 static const byte SECUNDARY_SLOT_BIT = 0x01;
 static const byte MEMORY_WATCH_BIT   = 0x02;
 static const byte GLOBAL_WRITE_BIT   = 0x04;
-
+static const byte GLOBAL_READ_BIT    = 0x08;
 
 MSXCPUInterface::MSXCPUInterface(MSXMotherBoard& motherBoard_)
 	: memoryDebug       (motherBoard_)
@@ -164,6 +164,25 @@ MSXCPUInterface::~MSXCPUInterface()
 	#endif
 }
 
+void MSXCPUInterface::checkHook8(word addr, byte val, uint32_t opcode, const EmuTime::param time)
+{
+	for (auto& g : globalReadsOpcode) {
+		if (g.opcodes & opcode) {
+			g.device->globalReadOpcode(addr, val, pcMark, time);
+		}
+	}
+}
+
+void MSXCPUInterface::checkHook16(word addr, word val, uint32_t opcode, const EmuTime::param time)
+{
+	for (auto& g : globalReadsOpcode) {
+		if (g.opcodes & opcode) {
+			g.device->globalReadOpcode(addr + 0, byte(val >> 0), pcMark, time);
+			g.device->globalReadOpcode(addr + 1, byte(val >> 8), pcMark, time);
+		}
+	}
+}
+
 void MSXCPUInterface::removeAllWatchPoints()
 {
 	while (!watchPoints.empty()) {
@@ -174,8 +193,13 @@ void MSXCPUInterface::removeAllWatchPoints()
 
 byte MSXCPUInterface::readMemSlow(word address, EmuTime::param time)
 {
+	byte disallow;
+	byte value;
+
+	disallow = disallowReadCache[address >> CacheLine::BITS];
+
 	// something special in this region?
-	if (unlikely(disallowReadCache[address >> CacheLine::BITS])) {
+	if (disallow) {
 		// execute read watches before actual read
 		if (readWatchSet[address >> CacheLine::BITS]
 		                [address &  CacheLine::LOW]) {
@@ -187,6 +211,20 @@ byte MSXCPUInterface::readMemSlow(word address, EmuTime::param time)
 	} else {
 		return visibleDevices[address >> 14]->readMem(address, time);
 	}
+
+	if (disallow & GLOBAL_READ_BIT)
+	{
+		// slot-select-ignore reads.
+		for (auto& g : globalReads[address >> CacheLine::BITS]) {
+			// very primitive address selection mechanism,
+			// but more than enough for now
+			if (unlikely((g.mask_addr & address) == g.value)) {
+				g.device->globalRead(address, value, time);
+			}
+		}
+	}
+
+	return value;
 }
 
 void MSXCPUInterface::writeMemSlow(word address, byte value, EmuTime::param time)
@@ -509,6 +547,38 @@ void MSXCPUInterface::registerGlobalWrite(MSXDevice& device, word address)
 	msxcpu.invalidateMemCache(address & CacheLine::HIGH, 0x100);
 }
 
+bool MSXCPUInterface::registerGlobalRead(MSXDevice& device, word mask, word address, uint32_t opcodes)
+{
+	word opage = CacheLine::SIZE; // Invalid page index
+	byte cpage; // Current page
+
+	if (opcodes != 0) {
+		globalReadsOpcode.push_back({ &device, opcodes });
+	}
+
+	if ((mask != 0) && (address != 0)) {
+		for (uint32_t addr = 0; addr <= 0xffff; addr++) {
+			if ((addr & mask) == address) {
+				// Current page
+				cpage = (addr >> CacheLine::BITS);
+
+				if (opage != cpage) {
+					// Current page
+					opage = cpage;
+
+					globalReads[cpage].push_back({ &device, mask, address });
+
+					disallowReadCache[cpage] |= GLOBAL_READ_BIT;
+
+					msxcpu.invalidateMemCache(addr & CacheLine::HIGH, // Start address
+						CacheLine::SIZE);       // Size
+				}
+			}
+		}
+	}
+	return true;
+}
+
 void MSXCPUInterface::unregisterGlobalWrite(MSXDevice& device, word address)
 {
 	GlobalWriteInfo info = { &device, address };
@@ -523,6 +593,72 @@ void MSXCPUInterface::unregisterGlobalWrite(MSXDevice& device, word address)
 	}
 	disallowWriteCache[address >> CacheLine::BITS] &= ~GLOBAL_WRITE_BIT;
 	msxcpu.invalidateMemCache(address & CacheLine::HIGH, 0x100);
+}
+
+bool MSXCPUInterface::registerIoGlobalRead(MSXDevice& device, byte port)
+{
+	IO_Global_In[port].push_back({ &device, port });
+
+	return true;
+}
+
+
+bool MSXCPUInterface::unregisterIoGlobalRead(MSXDevice& device, byte port)
+{
+	GlobalInOutpReadInfo info = { &device, port };
+
+	IO_Global_In[port].erase(find_unguarded(IO_Global_In[port], info));
+
+	return true;
+}
+
+bool MSXCPUInterface::registerIoGlobalWrite(MSXDevice& device, byte port)
+{
+	IO_Global_Out[port].push_back({ &device, port });
+
+	return true;
+}
+
+bool MSXCPUInterface::unregisterIoGlobalWrite(MSXDevice& device, byte port)
+{
+	GlobalInOutpReadInfo info = { &device, port };
+
+	IO_Global_Out[port].erase(find_unguarded(IO_Global_In[port], info));
+
+	return true;
+}
+
+bool MSXCPUInterface::unregisterGlobalRead(MSXDevice& device, word mask, word address)
+{
+	GlobalReadInfo info = { &device, address };
+
+	word opage = CacheLine::SIZE; // Invalid page index
+	byte cpage; // Current page
+
+	for (uint32_t addr = 0; addr <= 0xffff; addr++)
+	{
+		if ((addr & mask) == address) // In address range?
+		{
+			// Current page
+			cpage = (addr >> CacheLine::BITS);
+
+			if (opage != cpage) // Page changed?
+			{
+				// Current page
+				opage = cpage;
+
+				disallowReadCache[cpage] &= (~GLOBAL_READ_BIT);
+
+				// Remove current page
+				globalReads[cpage].erase(find_unguarded(globalReads[cpage], info));
+
+				msxcpu.invalidateMemCache(addr & CacheLine::HIGH, // Start address
+					CacheLine::SIZE);       // Size
+			}
+		}
+	}
+
+	return true;
 }
 
 ALWAYS_INLINE void MSXCPUInterface::updateVisible(int page, int ps, int ss)
@@ -544,6 +680,11 @@ void MSXCPUInterface::reset()
 		reg = 0;
 	}
 	setPrimarySlots(0);
+}
+
+void MSXCPUInterface::doIoreqM1()
+{
+	motherBoard.doIorqM1();
 }
 
 byte MSXCPUInterface::readIRQVector()

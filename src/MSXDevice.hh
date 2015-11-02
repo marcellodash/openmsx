@@ -63,6 +63,12 @@ public:
 	virtual byte readIRQVector();
 
 	/**
+	 * Z80 bus: IORQ\ = 0, M1\ = 0
+	 * Interrupt
+	 */
+	virtual void irqM1Cycle(EmuTime::param time);
+
+	/**
 	 * This method is called when MSX is powered down. The default
 	 * implementation does nothing, this is usually ok. Typically devices
 	 * that need to turn off LEDs need to reimplement this method.
@@ -193,6 +199,30 @@ public:
 	  * to be triggered.
 	  */
 	virtual void globalWrite(word address, byte value, EmuTime::param time);
+
+	/** Global reads.
+	 * Some devices violate the MSX standard by ignoring the SLOT-SELECT
+	 * signal;
+	 */
+	virtual void globalRead(word address, byte value, EmuTime::param time);
+
+	/** Global reads.
+	 * Some devices violate the MSX standard by ignoring the SLOT-SELECT
+	 * signal;
+	 */
+	virtual void globalReadOpcode(word address, byte value, unsigned pc, EmuTime::param time);
+
+	/** Global reads.
+	 * Some devices violate the MSX standard by ignoring the SLOT-SELECT
+	 * signal;
+	 */
+	virtual void globalInRead(word port, byte value, EmuTime::param time);
+
+	/** Global writes.
+	 * Some devices violate the MSX standard by ignoring the SLOT-SELECT
+	 * signal;
+	 */
+	virtual void globalOutWrite(word port, byte value, EmuTime::param time);
 
 	/** Invalidate CPU memory-mapping cache.
 	  * This is a shortcut to the MSXCPU::invalidateMemCache() method,

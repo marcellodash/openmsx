@@ -172,12 +172,12 @@
 #include "likely.hh"
 #include "inline.hh"
 #include "unreachable.hh"
+#include "CartridgePluginInterface.hh"
 #include <iomanip>
 #include <iostream>
 #include <type_traits>
 #include <cassert>
 #include <cstring>
-
 
 //
 // #define USE_COMPUTED_GOTO
@@ -332,6 +332,18 @@ template<class T> CPUCore<T>::CPUCore(
 	doReset(time);
 
 	initTables();
+}
+
+template<class T> byte CPUCore<T>::checkHook8(word addr, byte val, uint32_t opcode)
+{
+	interface->checkHook8(addr, val, opcode, getCurrentTime());
+	return val;
+}
+
+template<class T> word CPUCore<T>::checkHook16(word addr, word val, uint32_t opcode)
+{
+	interface->checkHook16(addr, val, opcode, getCurrentTime());
+	return val;
 }
 
 template<class T> void CPUCore<T>::warp(EmuTime::param time)
@@ -802,6 +814,7 @@ template<class T> inline void CPUCore<T>::nmi()
 // IM0 interrupt
 template<class T> inline void CPUCore<T>::irq0()
 {
+	interface->doIoreqM1();
 	// TODO current implementation only works for 1-byte instructions
 	//      ok for MSX
 	assert(interface->readIRQVector() == 0xFF);
@@ -2765,7 +2778,17 @@ template<class T> template<int EE> inline unsigned CPUCore<T>::RD_P_XX() {
 	unsigned result = RD_WORD(addr, T::CC_LD_HL_XX_2 + EE);
 	return result;
 }
+template<class T> template<int EE> inline unsigned CPUCore<T>::RD_P_XX_HOOK(uint32_t opcode) {
+	unsigned addr = RD_WORD_PC(T::CC_LD_HL_XX_1 + EE);
+	T::setMemPtr(addr + 1);
+	unsigned result = RD_WORD(addr, T::CC_LD_HL_XX_2 + EE);
+	checkHook16(addr, result, opcode);
+	return result;
+}
 template<class T> template<Reg16 REG, int EE> int CPUCore<T>::ld_SS_xword() {
+	if (REG == HL) {
+		set16<REG>(RD_P_XX_HOOK<EE>(OPCODE_LDHL_MMMM)); return T::CC_LD_HL_XX + EE;
+	}
 	set16<REG>(RD_P_XX<EE>());       return T::CC_LD_HL_XX + EE;
 }
 template<class T> template<Reg16 REG> int CPUCore<T>::ld_SS_xword_ED() {
@@ -3799,6 +3822,9 @@ template<class T> template<int EE> inline unsigned CPUCore<T>::POP() {
 	return RD_WORD(addr, T::CC_POP_1 + EE);
 }
 template<class T> template<Reg16 REG, int EE> int CPUCore<T>::pop_SS() {
+	if (REG == AF) {
+		set16<REG>(checkHook16(getSP(), POP<EE>(), OPCODE_POP_AF)); return T::CC_POP + EE;
+	}
 	set16<REG>(POP<EE>()); return T::CC_POP + EE;
 }
 

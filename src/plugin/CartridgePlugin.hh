@@ -65,6 +65,7 @@ protected:
    void pluginPrintError(const char *msg, ...);
    void pluginPrintProgress(const char *msg, ...);
    void pluginPrintInfo(const char *msg, ...);
+   void pluginPrintInfo(const string &msg);
    void pluginPowerUp(void) override;
    void pluginPowerDown(void) override;
    void pluginReset(void) override;

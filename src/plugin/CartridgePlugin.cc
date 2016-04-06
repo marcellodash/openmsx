@@ -63,23 +63,29 @@ CartridgePlugin::CartridgePlugin(const DeviceConfig& config) : MSXDevice(config)
 
 	// DLL name plugin
 	string dll = dllConfig.getChildData("filename");
+   string file;
 
-   module = LoadPlugin(dll);
+   file = dll;
+   module = LoadPlugin(file);
 
    if(module == nullptr)
    {
       // Trys to load the DLL from user data directory
-      module = LoadPlugin(getUserDataDir() + "\\plugins\\" + dll);
+      file = getUserDataDir() + "\\plugins\\" + dll;
+      module = LoadPlugin(file);
    }
 
    if(module == nullptr)
    {
       // Trys to load the DLL from system data directory
-      module = LoadPlugin(getSystemDataDir() + "\\plugins\\" + dll);
+      file = getSystemDataDir() + "\\plugins\\" + dll;
+      module = LoadPlugin(file);
    }
 
 	if(module != nullptr)
 	{
+      pluginPrintInfo(string("Loaded from: ") + file);
+
 		tOpenMsxPluginEntry entry;
 		// Get the plugin entry point
 		entry = (tOpenMsxPluginEntry)GetProcAddress(module, "OpenMsxPluginEntry");
@@ -173,6 +179,12 @@ void CartridgePlugin::pluginPrintProgress(const char *msg, ...)
 {
 	string m = "Plugin \"" + getName() + "\" | " + string(msg);
 	getCliComm().printProgress(m);
+}
+
+void CartridgePlugin::pluginPrintInfo(const string &msg)
+{
+	string m = "Plugin \"" + getName() + "\" | " + msg;
+	getCliComm().printInfo(m);
 }
 
 void CartridgePlugin::pluginPrintInfo(const char *msg, ...)

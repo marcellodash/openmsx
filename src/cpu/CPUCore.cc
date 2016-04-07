@@ -965,6 +965,7 @@ void CPUCore<T>::executeInstructions()
 start:
 #endif
 	unsigned ixy; // for dd_cb/fd_cb
+   interface->MarkPc(getPC());
 	byte opcodeMain = RDMEM_OPCODE(T::CC_MAIN);
 	incR(1);
 #ifdef USE_COMPUTED_GOTO
@@ -2748,7 +2749,7 @@ template<class T> template<Reg16 REG> int CPUCore<T>::ld_a_SS() {
 template<class T> int CPUCore<T>::ld_a_xbyte() {
 	unsigned addr = RD_WORD_PC(T::CC_LD_A_NN_1);
 	T::setMemPtr(addr + 1);
-	setA(RDMEM(addr, T::CC_LD_A_NN_2));
+	setA(checkHook8(addr, RDMEM(addr, T::CC_LD_A_NN_2), OPCODE_LDA_MMMM));
 	return T::CC_LD_A_NN;
 }
 

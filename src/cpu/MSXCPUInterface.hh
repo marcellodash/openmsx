@@ -154,6 +154,10 @@ public:
 	 * @see MSXDevice::writeIO()
 	 */
 	inline void writeIO(word port, byte value, EmuTime::param time) {
+		for (auto& g : IO_Global_Out[port & 0xFF]) {
+			g.device->globalOutWrite(port, value, time);
+		}
+
 		IO_Out[port & 0xFF]->writeIO(port, value, time);
 	}
 

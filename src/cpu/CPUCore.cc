@@ -2499,6 +2499,10 @@ template<class T> void CPUCore<T>::executeSlow()
 			setF(getF() & ~V_FLAG);
 		}
 		IRQAccept.signal();
+      
+      // Z80 signal IORQ\=0, M1\=0
+      interface->doIoreqM1(); // FIXME See IRQAccept.signal()
+
 		switch (getIM()) {
 			case 0: irq0();
 				break;

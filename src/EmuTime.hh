@@ -70,6 +70,7 @@ private:
 	friend std::ostream& operator<<(std::ostream& os, EmuTime::param time);
 	template<unsigned, unsigned> friend class Clock;
 	friend class DynamicClock;
+   friend class CartridgePlugin;
 };
 
 std::ostream& operator <<(std::ostream& os, EmuTime::param e);

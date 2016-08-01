@@ -69,6 +69,7 @@
 #include "MSXException.hh"
 #include "memory.hh"
 #include "components.hh"
+#include "CartridgePlugin.hh"
 
 #if COMPONENT_LASERDISC
 #include "PioneerLDControl.hh"
@@ -244,6 +245,8 @@ unique_ptr<MSXDevice> DeviceFactory::create(const DeviceConfig& conf)
 		result = make_unique<ChakkariCopy>(conf);
 	} else if (type == "T9769") {
 		// Ignore for now. We might want to create a real device for it later.
+	} else if (type == "Plugin") {
+		result = make_unique<CartridgePlugin>(conf);
 	} else {
 		throw MSXException("Unknown device \"" + type +
 		                   "\" specified in configuration");

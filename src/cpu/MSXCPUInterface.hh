@@ -46,6 +46,9 @@ public:
 	explicit MSXCPUInterface(MSXMotherBoard& motherBoard);
 	~MSXCPUInterface();
 
+   void checkHook8(word addr, byte val, uint32_t opcode, const EmuTime::param time);
+   void checkHook16(word addr, word val, uint32_t opcode, const EmuTime::param time);
+
 	/**
 	 * Devices can register their In ports. This is normally done
 	 * in their constructor. Once device are registered, their
@@ -97,10 +100,38 @@ public:
 	void   registerGlobalWrite(MSXDevice& device, word address);
 	void unregisterGlobalWrite(MSXDevice& device, word address);
 
+   /** (Un)register global writes.
+   * @see MSXDevice::globalWrite()
+   */
+   bool registerGlobalRead(MSXDevice& device, word mask, word address, uint32_t opcodes);
+   bool unregisterGlobalRead(MSXDevice& device, word mask, word address);
+
+   bool registerIoGlobalRead(MSXDevice& device, byte port);
+   bool unregisterIoGlobalRead(MSXDevice& device, byte port);
+
+   bool registerIoGlobalWrite(MSXDevice& device, byte port);
+   bool unregisterIoGlobalWrite(MSXDevice& device, byte port);
+
 	/**
 	 * Reset (the slot state)
 	 */
 	void reset();
+
+   /**
+    *
+    */
+   inline void MarkPc(word pc)
+   {
+      pcMark = pc;
+   }
+
+   /**
+    *
+    */
+   inline word GetMarkedPc(void)
+   {
+      return pcMark;
+   }
 
 	/**
 	 * This reads a byte from the currently selected device
@@ -128,7 +159,14 @@ public:
 	 * @see MSXDevice::readIO()
 	 */
 	inline byte readIO(word port, EmuTime::param time) {
-		return IO_In[port & 0xFF]->readIO(port, time);
+      byte value;
+      value = IO_In[port & 0xFF]->readIO(port, time);
+
+      for (auto& g : IO_Global_In[port & 0xFF]) {
+         g.device->globalInRead(port, value, time);
+      }
+
+      return value;
 	}
 
 	/**
@@ -136,6 +174,9 @@ public:
 	 * @see MSXDevice::writeIO()
 	 */
 	inline void writeIO(word port, byte value, EmuTime::param time) {
+      for (auto& g : IO_Global_Out[port & 0xFF]) {
+         g.device->globalOutWrite(port, value, time);
+      }
 		IO_Out[port & 0xFF]->writeIO(port, value, time);
 	}
 
@@ -157,6 +198,12 @@ public:
 		}
 		return visibleDevices[start >> 14]->getReadCacheLine(start);
 	}
+
+   /**
+   * IOREQ\ = 0, M1\=0
+   * Interrup
+   */
+   void doIoreqM1();
 
 	/**
 	 * Test that the memory in the interval [start, start +
@@ -382,6 +429,37 @@ private:
 		}
 	};
 	std::vector<GlobalWriteInfo> globalWrites;
+   struct GlobalReadInfo {
+      MSXDevice* device;
+      word mask_addr;
+      word value;
+      bool operator==(const GlobalReadInfo& rhs) const {
+         return (device == rhs.device) &&
+            (mask_addr == rhs.mask_addr) &&
+            (value == rhs.value);
+      }
+   };
+   std::vector<GlobalReadInfo> globalReads[CacheLine::SIZE];
+
+   struct GlobalReadOpcodeInfo {
+      MSXDevice* device;
+      uint32_t opcodes;
+      bool operator==(const GlobalReadOpcodeInfo& rhs) const {
+         return (device == rhs.device);
+      }
+   };
+   std::vector<GlobalReadOpcodeInfo> globalReadsOpcode;
+
+   struct GlobalInOutpReadInfo {
+      MSXDevice* device;
+      word port;
+      bool operator==(const GlobalInOutpReadInfo& rhs) const {
+         return (device == rhs.device) &&
+            (port == rhs.port);
+      }
+   };
+   std::vector<GlobalInOutpReadInfo> IO_Global_In[256];
+   std::vector<GlobalInOutpReadInfo> IO_Global_Out[256];
 
 	MSXDevice* IO_In [256];
 	MSXDevice* IO_Out[256];
@@ -391,6 +469,7 @@ private:
 	byte primarySlotState[4];
 	byte secondarySlotState[4];
 	unsigned expanded[4];
+   unsigned pcMark;
 
 	bool fastForward; // no need to serialize
 

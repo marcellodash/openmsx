@@ -94,6 +94,7 @@ public:
 	bool isActive() const { return active; }
 	bool isFastForwarding() const { return fastForwarding; }
 
+   void doIorqM1();
 	byte readIRQVector();
 
 	const HardwareConfig* getMachineConfig() const { return machineConfig; }

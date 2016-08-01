@@ -356,6 +356,11 @@ void MSXDevice::reset(EmuTime::param /*time*/)
 	// nothing
 }
 
+void MSXDevice::irqM1Cycle(EmuTime::param time)
+{
+
+}
+
 byte MSXDevice::readIRQVector()
 {
 	return 0xFF;
@@ -443,6 +448,30 @@ void MSXDevice::globalWrite(word /*address*/, byte /*value*/,
                             EmuTime::param /*time*/)
 {
 	UNREACHABLE;
+}
+
+void MSXDevice::globalRead(word /*address*/, byte /*value*/,
+                     EmuTime::param /*time*/)
+{
+   UNREACHABLE;
+}
+
+void MSXDevice::globalReadOpcode(word /*address*/, byte /*value*/, unsigned /*pc*/,
+EmuTime::param /*time*/)
+{
+   UNREACHABLE;
+}
+
+void MSXDevice::globalInRead(word /*port*/, byte /*value*/,
+EmuTime::param /*time*/)
+{
+   UNREACHABLE;
+}
+
+void MSXDevice::globalOutWrite(word /*port*/, byte /*value*/,
+                           EmuTime::param /*time*/)
+{
+   UNREACHABLE;
 }
 
 byte* MSXDevice::getWriteCacheLine(word /*start*/) const

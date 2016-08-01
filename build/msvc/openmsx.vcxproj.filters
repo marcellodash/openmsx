@@ -70,6 +70,9 @@
     <Filter Include="laserdisc">
       <UniqueIdentifier>{3b3e10a3-7923-46c0-b78f-46acd840d7c2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{28b30b71-d90d-4990-a871-7e777e4e62b8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(OpenMSXSrcDir)\cassette\CasImage.cc">
@@ -1354,6 +1357,9 @@
     <ClCompile Include="$(OpenMSXSrcDir)\utils\win32-windowhandle.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\scalers\GLDefaultScaler.cc" />
     <ClCompile Include="$(OpenMSXSrcDir)\video\GLContext.cc" />
+    <ClCompile Include="..\..\src\plugin\CartridgePlugin.cc">
+      <Filter>plugin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(OpenMSXSrcDir)\cassette\CasImage.hh">
@@ -2830,6 +2836,8 @@
     <None Include="$(OpenMSXSrcDir)\memory\SdCard.cc.hh" />
     <None Include="$(OpenMSXSrcDir)\video\GLContext.hh" />
     <None Include="$(OpenMSXSrcDir)\video\scalers\GLDefaultScaler.hh" />
+    <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
+    <None Include="$(OpenMSXSrcDir)\fdc\SpectravideoFDC.hh" />
     <None Include="$(OpenMSXSrcDir)\video\SuperImposedFrame.hh" />
   </ItemGroup>
   <ItemGroup>

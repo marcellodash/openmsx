@@ -540,6 +540,14 @@ void MSXMotherBoard::doReset()
 		std::make_shared<SimpleEvent>(OPENMSX_BOOT_EVENT));
 }
 
+void MSXMotherBoard::doIorqM1()
+{
+   EmuTime::param time = getCurrentTime();
+      for (auto& d : availableDevices) {
+      d->irqM1Cycle(time);
+   }
+}
+
 byte MSXMotherBoard::readIRQVector()
 {
 	byte result = 0xff;

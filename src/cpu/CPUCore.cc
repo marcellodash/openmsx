@@ -172,6 +172,7 @@
 #include "likely.hh"
 #include "inline.hh"
 #include "unreachable.hh"
+#include "CartridgePluginInterface.hh"
 #include <iomanip>
 #include <iostream>
 #include <type_traits>
@@ -332,6 +333,18 @@ template<class T> CPUCore<T>::CPUCore(
 	doReset(time);
 
 	initTables();
+}
+
+template<class T> byte CPUCore<T>::checkHook8(word addr, byte val, uint32_t opcode)
+{
+   interface->checkHook8(addr, val, opcode, getCurrentTime());
+   return val;
+}
+
+template<class T> word CPUCore<T>::checkHook16(word addr, word val, uint32_t opcode)
+{
+   interface->checkHook16(addr, val, opcode, getCurrentTime());
+   return val;
 }
 
 template<class T> void CPUCore<T>::warp(EmuTime::param time)
@@ -955,6 +968,7 @@ void CPUCore<T>::executeInstructions()
 start:
 #endif
 	unsigned ixy; // for dd_cb/fd_cb
+   interface->MarkPc(getPC());
 	byte opcodeMain = RDMEM_OPCODE(T::CC_MAIN);
 	incR(1);
 #ifdef USE_COMPUTED_GOTO
@@ -2488,6 +2502,10 @@ template<class T> void CPUCore<T>::executeSlow()
 			setF(getF() & ~V_FLAG);
 		}
 		IRQAccept.signal();
+
+      // Z80 signal IORQ\=0, M1\=0
+      interface->doIoreqM1();
+
 		switch (getIM()) {
 			case 0: irq0();
 				break;
@@ -2751,7 +2769,7 @@ template<class T> template<Reg16 REG> int CPUCore<T>::ld_a_SS() {
 template<class T> int CPUCore<T>::ld_a_xbyte() {
 	unsigned addr = RD_WORD_PC(T::CC_LD_A_NN_1);
 	T::setMemPtr(addr + 1);
-	setA(RDMEM(addr, T::CC_LD_A_NN_2));
+   setA(checkHook8(addr, RDMEM(addr, T::CC_LD_A_NN_2), OPCODE_LDA_MMMM));
 	return T::CC_LD_A_NN;
 }
 
@@ -2781,7 +2799,19 @@ template<class T> template<int EE> inline unsigned CPUCore<T>::RD_P_XX() {
 	unsigned result = RD_WORD(addr, T::CC_LD_HL_XX_2 + EE);
 	return result;
 }
+
+template<class T> template<int EE> inline unsigned CPUCore<T>::RD_P_XX_HOOK(uint32_t opcode) {
+   unsigned addr = RD_WORD_PC(T::CC_LD_HL_XX_1 + EE);
+   T::setMemPtr(addr + 1);
+   unsigned result = RD_WORD(addr, T::CC_LD_HL_XX_2 + EE);
+   checkHook16(addr, result, opcode);
+   return result;
+}
+
 template<class T> template<Reg16 REG, int EE> int CPUCore<T>::ld_SS_xword() {
+   if (REG == HL) {
+      set16<REG>(RD_P_XX_HOOK<EE>(OPCODE_LDHL_MMMM)); return T::CC_LD_HL_XX + EE;
+   }
 	set16<REG>(RD_P_XX<EE>());       return T::CC_LD_HL_XX + EE;
 }
 template<class T> template<Reg16 REG> int CPUCore<T>::ld_SS_xword_ED() {
@@ -3825,6 +3855,9 @@ template<class T> template<int EE> inline unsigned CPUCore<T>::POP() {
 	return RD_WORD(addr, T::CC_POP_1 + EE);
 }
 template<class T> template<Reg16 REG, int EE> int CPUCore<T>::pop_SS() {
+   if (REG == AF) {
+      set16<REG>(checkHook16(getSP(), POP<EE>(), OPCODE_POP_AF)); return T::CC_POP + EE;
+   }
 	set16<REG>(POP<EE>()); return T::CC_POP + EE;
 }
 

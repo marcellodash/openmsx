@@ -65,12 +65,12 @@ HMODULE CartridgePlugin::LoadPlugin(const string &filename)
 
 CartridgePlugin::CartridgePlugin(const DeviceConfig& config) : MSXDevice(config), evt(&evtdummy)
 {
-	string reason;
+   string reason;
 
-	const XMLElement& dllConfig = config.getChild("dll");
+   const XMLElement& dllConfig = config.getChild("dll");
 
-	// DLL name plugin
-	string dll = dllConfig.getChildData("filename");
+   // DLL name plugin
+   string dll = dllConfig.getChildData("filename");
    string file;
 
    file = dll;
@@ -106,16 +106,18 @@ CartridgePlugin::CartridgePlugin(const DeviceConfig& config) : MSXDevice(config)
 		if(entry)
 		{
 			// Execute DLL procedure
-			int ret = entry(this, MAJOR, MINOR);
+			int32_t ret = entry(this, MAJOR, MINOR);
 
-			if(ret == 1)
+			if(ret == 0)
 			{
 				// Signal plugin load
 				if(!evt->OnOpenMsxPluginLoad())
 					reason = "OnOpenMsxPluginLoad()";
 			}
 			else
-				reason = "OpenMsxPluginEntry()";
+			{
+				reason = "OpenMsxPluginEntry() return code " + ret;
+			}
 		}
 		else
 			reason = "GetProcAddress()";

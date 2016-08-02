@@ -116,7 +116,7 @@ CartridgePlugin::CartridgePlugin(const DeviceConfig& config) : MSXDevice(config)
 			}
 			else
 			{
-				reason = "OpenMsxPluginEntry() return code " + ret;
+				reason = "OpenMsxPluginEntry() return code " + to_string(ret);
 			}
 		}
 		else
